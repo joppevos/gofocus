@@ -7,13 +7,11 @@ import (
 	"time"
 )
 
-const defaultDuration = 25 * time.Minute
+const defaultDuration = 5 * time.Second
 
-func init() {
+func getDurationArg()(time.Time, error){
 	flag.Parse()
-}
-
-func getDurationArg(start time.Time)(time.Time, error){
+	start := time.Now()
 	arg := flag.Arg(0)
 	if arg == "" {
 		return start.Add(defaultDuration), nil
