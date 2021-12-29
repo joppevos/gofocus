@@ -1,7 +1,7 @@
 ## what?
 Gofocus disables access too websites for a given amount of time.
 
-Add websites you want to be blocked in `hosts_config.json`:
+Add websites you want to be blocked in `hostsfile.json`:
 ```json
 {
   "ip_address": "127.0.0.1",
