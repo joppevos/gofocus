@@ -12,15 +12,11 @@ func TestFormatHostFile(t *testing.T) {
 	}
 
 	got := FormatHostFile(file)
-	want := `127.0.0.1 www.youtube.com
+	want := `
+127.0.0.1 www.youtube.com
 127.0.0.1 www.google.com
 `
 	if got != want {
-		t.Errorf("got %q want %q", got, want )
+		t.Errorf("got %q want %q", got, want)
 	}
-}
-
-func TestReadJSON(t *testing.T) {
-
-
 }

@@ -7,13 +7,15 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
+	"os/signal"
 	"strings"
 	"time"
 )
 
-const focusHosts = "/Users/vosjoppe/github/gofocus/hosts"
-const swapFocusHosts = "/Users/vosjoppe/github/gofocus/hosts_swap"
-const configHosts = "/Users/vosjoppe/github/gofocus/hosts_swap"
+const focusHosts = "/etc/hosts"
+const swapFocusHosts = "/etc/hosts_swap"
+const configHosts = "/Users/vosjoppe/github/gofocus/hostsfile.json" // TODO
 
 type HostsFile struct {
 	IpAddress string      `json:"ip_address"`
@@ -25,11 +27,14 @@ type HostNames struct {
 }
 
 func main() {
+	go getCancelSignal()
+
 	finish, err := getDurationArg()
 	if err != nil {
 		return
 	}
 	fmt.Printf("Go focus!\n")
+
 	// Duplicate the current host file
 	err = Copy(focusHosts, swapFocusHosts)
 	if err != nil {
@@ -44,14 +49,17 @@ func main() {
 		}
 	}()
 
-	// append blocked websites to focus hosts
+	// append blocked websites to focus hosts file
 	BlockedHosts := FormatHostFile(readJSON(configHosts))
-	err = AppendToFile(focusHosts,BlockedHosts)
+	err = AppendToFile(focusHosts, BlockedHosts)
+
+	// flush cache to refresh hosts
+	exec.Command("dscacheutil -flushcache\n")
 	if err != nil {
 		panic(err)
 	}
 
-	// on any error, make sure we put back old hosts file
+	//  put back old hosts file
 	defer func() {
 		err := Copy(swapFocusHosts, focusHosts)
 		if err != nil {
@@ -60,10 +68,10 @@ func main() {
 	}()
 
 	countDown(finish)
-	fmt.Println("\a") // \a is the bell literal.
-	fmt.Printf("Go take a break")
 
+	fmt.Printf("\aGo take a break") // \a is the bell system sound literal.
 }
+
 func formatMinutes(t time.Duration) string {
 	minutes := int(t.Minutes())
 	seconds := int(t.Seconds()) % 60
@@ -74,13 +82,17 @@ func formatMinutes(t time.Duration) string {
 func countDown(duration time.Time) {
 	for range time.Tick(1 * time.Second) {
 		timeRemaining := -time.Since(duration)
-
 		if timeRemaining <= 0 {
 			break
 		}
-
-		fmt.Fprint(os.Stdout, "Countdown: ", formatMinutes(timeRemaining), "   \r")
-		os.Stdout.Sync()
+		_, err := fmt.Fprint(os.Stdout, "Countdown: ", formatMinutes(timeRemaining), "   \r")
+		if err != nil {
+			panic(err)
+		}
+		err = os.Stdout.Sync()
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -97,7 +109,6 @@ func Copy(src, target string) error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
 
 	_, err = io.Copy(out, in)
 	if err != nil {
@@ -127,20 +138,19 @@ func AppendToFile(file string, data string) error {
 	return nil
 }
 
-func FormatHostFile(file HostsFile) string{
+func FormatHostFile(file HostsFile) string {
 	builder := strings.Builder{}
-	for _, e := range file.HostNames{
+	builder.WriteString("\n") // start on a newline
+	for _, e := range file.HostNames {
 		_, err := builder.WriteString(fmt.Sprintf("%s %s\n", file.IpAddress, e.HostName))
-		if err != nil{
+		if err != nil {
 			panic(err)
 		}
 	}
 	return builder.String()
-
-
 }
 
-func readJSON(file string) HostsFile{
+func readJSON(file string) HostsFile {
 	plan, _ := ioutil.ReadFile(file)
 	data := HostsFile{}
 	err := json.Unmarshal(plan, &data)
@@ -149,4 +159,24 @@ func readJSON(file string) HostsFile{
 	}
 	return data
 
+}
+
+// getCancelSignal catch user input ctrl+c
+// putting back the host file in its original state
+func getCancelSignal() {
+	sigchan := make(chan os.Signal)
+	signal.Notify(sigchan, os.Interrupt)
+	<-sigchan
+	log.Println("Program killed !")
+
+	err := Copy(swapFocusHosts, focusHosts)
+	if err != nil {
+		panic(err)
+	}
+
+	err = os.Remove(swapFocusHosts)
+	if err != nil {
+		panic(err)
+	}
+	os.Exit(0)
 }
