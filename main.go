@@ -15,7 +15,7 @@ import (
 
 const focusHosts = "/etc/hosts"
 const swapFocusHosts = "/etc/hosts_swap"
-const configHosts = "hosts.json" // TODO
+const configHosts = "hosts.json"
 
 type HostsFile struct {
 	IpAddress string      `json:"ip_address"`
@@ -33,15 +33,20 @@ func main() {
 	if err != nil {
 		return
 	}
-	fmt.Printf("Go focus!\n")
 
 	// Duplicate the current host file
 	err = Copy(focusHosts, swapFocusHosts)
 	if err != nil {
 		panic(err)
 	}
-
-	// remove swap file
+	//  put back old hosts file
+	defer func() {
+		err := Copy(swapFocusHosts, focusHosts)
+		if err != nil {
+			panic(err)
+		}
+	}()
+	// remove temp swap file
 	defer func() {
 		err := os.Remove(swapFocusHosts)
 		if err != nil {
@@ -56,23 +61,13 @@ func main() {
 	BlockedHosts := FormatHostFile(HostFile)
 	// append blocked websites to focus hosts file
 	err = AppendToFile(focusHosts, BlockedHosts)
-
-	// flush cache to refresh hosts
-	exec.Command("dscacheutil -flushcache\n")
 	if err != nil {
 		panic(err)
 	}
-
-	//  put back old hosts file
-	defer func() {
-		err := Copy(swapFocusHosts, focusHosts)
-		if err != nil {
-			panic(err)
-		}
-	}()
-
+	// flush cache to refresh hosts
+	exec.Command("dscacheutil -flushcache\n")
+	fmt.Printf("Go focus!\n")
 	countDown(finish)
-
 	fmt.Printf("\aGo take a break.\n") // \a is the bell system sound literal.
 }
 
