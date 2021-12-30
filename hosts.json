@@ -6,6 +6,9 @@
     },
     {
       "host_name": "www.reddit.com"
+    },
+    {
+      "host_name": "https://news.ycombinator.com/"
     }
   ]
 }
