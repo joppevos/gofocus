@@ -9,6 +9,9 @@
     },
     {
       "host_name": "https://news.ycombinator.com/"
+    },
+    {
+      "host_name": "news.ycombinator.com"
     }
   ]
 }
