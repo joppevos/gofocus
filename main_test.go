@@ -1,6 +1,8 @@
 package main
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestFormatHostFile(t *testing.T) {
 	file := HostsFile{
@@ -18,5 +20,13 @@ func TestFormatHostFile(t *testing.T) {
 `
 	if got != want {
 		t.Errorf("got %q want %q", got, want)
+	}
+}
+
+func TestReadJSONError(t *testing.T) {
+	file := "notexisting.json"
+	_, err := ReadJSON(file)
+	if err == nil {
+		t.Fatal("expected an error")
 	}
 }
