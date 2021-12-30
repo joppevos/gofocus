@@ -15,7 +15,7 @@ import (
 
 const focusHosts = "/etc/hosts"
 const swapFocusHosts = "/etc/hosts_swap"
-const configHosts = "/Users/vosjoppe/github/gofocus/hostsfile.json" // TODO
+const configHosts = "hosts.json" // TODO
 
 type HostsFile struct {
 	IpAddress string      `json:"ip_address"`
@@ -49,8 +49,12 @@ func main() {
 		}
 	}()
 
+	HostFile, err := ReadJSON(configHosts)
+	if err != nil {
+		panic(err)
+	}
+	BlockedHosts := FormatHostFile(HostFile)
 	// append blocked websites to focus hosts file
-	BlockedHosts := FormatHostFile(readJSON(configHosts))
 	err = AppendToFile(focusHosts, BlockedHosts)
 
 	// flush cache to refresh hosts
@@ -69,7 +73,7 @@ func main() {
 
 	countDown(finish)
 
-	fmt.Printf("\aGo take a break") // \a is the bell system sound literal.
+	fmt.Printf("\aGo take a break.\n") // \a is the bell system sound literal.
 }
 
 func formatMinutes(t time.Duration) string {
@@ -86,10 +90,6 @@ func countDown(duration time.Time) {
 			break
 		}
 		_, err := fmt.Fprint(os.Stdout, "Countdown: ", formatMinutes(timeRemaining), "   \r")
-		if err != nil {
-			panic(err)
-		}
-		err = os.Stdout.Sync()
 		if err != nil {
 			panic(err)
 		}
@@ -150,14 +150,14 @@ func FormatHostFile(file HostsFile) string {
 	return builder.String()
 }
 
-func readJSON(file string) HostsFile {
+func ReadJSON(file string) (HostsFile, error) {
 	plan, _ := ioutil.ReadFile(file)
 	data := HostsFile{}
 	err := json.Unmarshal(plan, &data)
 	if err != nil {
-		panic(err)
+		return HostsFile{}, fmt.Errorf("unable to read configuration file: '%s': %v", file, err)
 	}
-	return data
+	return data, err
 
 }
 
@@ -166,8 +166,9 @@ func readJSON(file string) HostsFile {
 func getCancelSignal() {
 	sigchan := make(chan os.Signal)
 	signal.Notify(sigchan, os.Interrupt)
+	signal.Notify(sigchan, os.Kill)
 	<-sigchan
-	log.Println("Program killed !")
+	log.Println("Timer has been cancelled.")
 
 	err := Copy(swapFocusHosts, focusHosts)
 	if err != nil {
