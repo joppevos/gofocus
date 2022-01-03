@@ -26,6 +26,9 @@ type HostNames struct {
 	HostName string `json:"host_name"`
 }
 
+// TODO: possibly no duplicate and simply append to a file.
+// remove the appended lines when finished
+
 func main() {
 	go getCancelSignal()
 
@@ -45,10 +48,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-	}()
-	// remove temp swap file
-	defer func() {
-		err := os.Remove(swapFocusHosts)
+		err = os.Remove(swapFocusHosts)
 		if err != nil {
 			panic(err)
 		}
@@ -159,9 +159,8 @@ func ReadJSON(file string) (HostsFile, error) {
 // getCancelSignal catch user input ctrl+c
 // putting back the host file in its original state
 func getCancelSignal() {
-	sigchan := make(chan os.Signal)
+	sigchan := make(chan os.Signal, 1)
 	signal.Notify(sigchan, os.Interrupt)
-	signal.Notify(sigchan, os.Kill)
 	<-sigchan
 	log.Println("Timer has been cancelled.")
 
