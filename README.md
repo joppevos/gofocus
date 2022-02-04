@@ -1,20 +1,8 @@
 ## what?
 Gofocus disables access too websites for a given amount of time.
 
-Add websites you want to be blocked in `hostsfile.json`:
-```json
-{
-  "ip_address": "127.0.0.1",
-  "host_names": [
-    {
-      "host_name": "www.youtube.com"
-    },
-    {
-      "host_name": "https://news.ycombinator.com/"
-    }
-  ]
-}
-```
+Add websites you want to be blocked in `hosts`:
+
 ## todo
 - create installer
 - workaround for sudo
