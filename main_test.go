@@ -1,32 +1,47 @@
 package main
 
 import (
+	"fmt"
+	"reflect"
 	"testing"
+	"time"
 )
 
-func TestFormatHostFile(t *testing.T) {
-	file := HostsFile{
-		IpAddress: "127.0.0.1",
-		HostNames: []HostNames{
-			{HostName: "www.youtube.com"},
-			{HostName: "www.google.com"},
-		},
-	}
+func TestSplitContent(t *testing.T) {
+	content := []byte("www.youtube.com\nwww.google.com")
 
-	got := FormatHostFile(file)
-	want := `
-127.0.0.1 www.youtube.com
-127.0.0.1 www.google.com
-`
-	if got != want {
-		t.Errorf("got %q want %q", got, want)
+	got := splitContent(content)
+	want := []string{"www.youtube.com", "www.google.com"}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %s, want %s", got, want)
 	}
 }
 
-func TestReadJSONError(t *testing.T) {
-	file := "notexisting.json"
-	_, err := ReadJSON(file)
-	if err == nil {
-		t.Fatal("expected an error")
+func TestFormatHostConfig(t *testing.T) {
+	h := []string{"www.youtube.com", "www.google.com"}
+
+	got := formatHostsConfig(h)
+	want := fmt.Sprintf(`
+%s www.youtube.com
+%s www.google.com
+`, IPAddress, IPAddress)
+
+	AssertEqual(t, got, want)
+}
+
+func TestFormatMinutes(t *testing.T) {
+	d := time.Duration(60) * time.Minute
+
+	got := formatMinutes(d)
+	want := "60:00"
+
+	AssertEqual(t, got, want)
+}
+
+func AssertEqual(t *testing.T, got, want string) {
+	if got != want {
+		t.Errorf("got %s, want %s", got, want)
 	}
+
 }
