@@ -64,7 +64,7 @@ func rollBack() {
 
 // flushCache on UNIX to refresh the hosts file.
 func flushCache() {
-	exec.Command("dscacheutil -flushcache\n")
+	exec.Command("dscacheutil",  "-flushcache\n")
 }
 
 func formatMinutes(t time.Duration) string {
@@ -92,6 +92,7 @@ func countDown(w io.Writer, duration time.Duration) {
 // Copy a source file to destination. Any existing file will be overwritten and will
 // not copy file attributes.
 func Copy(src, target string) error {
+
 	in, err := os.Open(src)
 	if err != nil {
 		log.Println("unable to open source file")
@@ -127,6 +128,8 @@ func appendToHostsFile(name string, data string) error {
 	defer f.Close()
 
 	_, err = f.WriteString(data)
+	content, _ := ioutil.ReadFile(name)
+	log.Println(string(content))
 	if err != nil {
 		return err
 	}
@@ -164,9 +167,11 @@ func splitContent(content []byte) []string {
 // getCancelSignal catch user input ctrl+c
 // putting back the hosts file in its original state
 func getCancelSignal() {
-	sigchan := make(chan os.Signal, 1)
-	signal.Notify(sigchan, os.Interrupt)
-	<-sigchan
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
+	<-quit
+	fmt.Println("Are you sure?")
+	<-quit
 	log.Println("Timer has been cancelled.")
 
 	err := Copy(BackupHostsFilePath, HostsFilePath)
