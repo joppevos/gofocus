@@ -9,17 +9,16 @@ import (
 
 const defaultDuration = 8 * time.Second
 
-func getDurationArg() (time.Time, error) {
+func getDurationArg() (time.Duration, error) {
 	flag.Parse()
-	start := time.Now()
 	arg := flag.Arg(0)
 	if arg == "" {
-		return start.Add(defaultDuration), nil
+		return defaultDuration, nil
 	}
 
 	if n, err := strconv.Atoi(arg); err == nil {
-		return start.Add(time.Duration(n) * time.Minute), nil
+		return time.Duration(n) * time.Minute, nil
 	}
 
-	return time.Time{}, fmt.Errorf("could not parse time: %q", arg)
+	return 0, fmt.Errorf("could not parse time: %q", arg)
 }
