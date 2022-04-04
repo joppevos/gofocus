@@ -1,7 +1,7 @@
 ## what?
-Gofocus disables access too websites for a given amount of time.
+Gofocus blocks access to websites for a specified time.
 
-Add websites you want to be blocked in `hosts`:
+Add the websites to be blocked in Hosts:
 
 ## todo
 - create installer
